@@ -9,15 +9,17 @@ addons:
   apt:
     update: true
     packages:
-     - build-essential
-     - fxload
-     - gnupg
-     - libftdi-dev
-     - libreadline-dev
-     - libusb-1.0-0-dev
-     - python-yaml
-     - realpath
-     - util-linux
+    - build-essential
+    - fxload
+    - gnupg
+    - libftdi-dev
+    - libreadline-dev
+    - libusb-1.0-0-dev
+    - python-yaml
+    - realpath
+    - util-linux
+    - libevent-dev
+    - libjson-c-dev
 
 git:
   submodules: false
@@ -108,6 +110,11 @@ env:
    #--------------------------------------------
    - C=lm32         P=atlys            T="hdmi2usb"
    - C=lm32         P=opsis            T="hdmi2usb"
+   #--------------------------------------------
+   # SIM/Verilator Targets
+   #--------------------------------------------
+   - C=or1k         P=sim              T="base"
+   - C=or1k         P=sim              T="base net"
 
 jobs:
   fail_fast: true
