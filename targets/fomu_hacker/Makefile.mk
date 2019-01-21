@@ -1,7 +1,7 @@
-# tomu_fpga_hacker targets
+# fomu_hacker targets
 
-ifneq ($(PLATFORM),tomu_fpga_hacker)
-	$(error "Platform should be tomu_fpga_hacker when using this file!?")
+ifneq ($(PLATFORM),fomu_hacker)
+	$(error "Platform should be fomu_hacker when using this file!?")
 endif
 
 # Settings
@@ -16,7 +16,7 @@ image-flash-$(PLATFORM):
 
 # Gateware
 gateware-load-$(PLATFORM):
-	@echo "TinyFPGA BX doesn't support loading, use the flash target instead."
+	@echo "Fomu Hacker doesn't support loading, use the flash target instead."
 	@echo "make gateware-flash"
 	@false
 
@@ -25,7 +25,8 @@ gateware-load-$(PLATFORM):
 GATEWARE_BIOS_FILE = $(TARGET_BUILD_DIR)/image-gateware+bios+none.bin
 
 gateware-flash-$(PLATFORM): $(GATEWARE_BIOS_FILE)
-	tinyprog --program-image $(GATEWARE_BIOS_FILE)
+	@echo "Unsupported."
+	@false
 
 # To avoid duplicating the mkimage.py call here, if the user has not
 # already built a image-gateware+bios+none.bin, we call make recursively
@@ -41,7 +42,7 @@ firmware-load-$(PLATFORM):
 	flterm --port=$(COMM_PORT) --kernel=$(FIRMWARE_FILEBASE).bin --speed=$(BAUD)
 
 firmware-flash-$(PLATFORM):
-	@echo "TinyFPGA BX doesn't support just flashing firmware, use image target instead."
+	@echo "Fomu Hacker doesn't support just flashing firmware, use image target instead."
 	@echo "make image-flash"
 	@false
 

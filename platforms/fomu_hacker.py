@@ -67,13 +67,13 @@ class Platform(LatticePlatform):
     spiflash_model = "n25q32"
     spiflash_read_dummy_bits = 8
     spiflash_clock_div = 2
-    spiflash_total_size = int((16/8)*1024*1024) # 16Mbit
+    spiflash_total_size = int((16/8)*1024*1024) # 16Mbit, 1megabytes
     spiflash_page_size = 256
     spiflash_sector_size = 0x10000
 
     def __init__(self):
-        LatticePlatform.__init__(self, "ice40-up5k-uwg30", _io, _connectors,
-                                 toolchain="icestorm")
+        LatticePlatform.__init__(
+            self, "ice40-up5k-uwg30", _io, _connectors, toolchain="icestorm")
 
     def create_programmer(self):
         return IceStormProgrammer()

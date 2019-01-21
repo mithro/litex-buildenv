@@ -15,7 +15,7 @@ from gateware import cas
 from gateware import spi_flash
 
 from targets.utils import csr_map_update
-import platforms.tomu_fpga_hacker as tomu_fpga
+import platforms.fomu_hacker as fomu_hacker
 
 
 
@@ -81,7 +81,7 @@ class BaseSoC(SoCCore):
             kwargs['integrated_sram_size']=0
 
         # FIXME: Force either lite or minimal variants of CPUs; full is too big.
-        platform.add_extension(tomu_fpga.pins_serial)
+        platform.add_extension(fomu_hacker.pins_serial)
 
         clk_freq = int(12e6)
 

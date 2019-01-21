@@ -15,11 +15,12 @@ from gateware import cas
 from gateware import spi_flash
 
 from targets.utils import csr_map_update
-import platforms.tomu_fpga_hacker as tomu_fpga
-from targets.tomu_fpga_hacker.base import BaseSoC
+import platforms.fomu_hacker as fomu_hacker
+from targets.fomu_hacker.base import BaseSoC
 from third_party.valentyusb.valentyusb import usbcore
 
 from litex.soc.interconnect import wishbone
+
 
 class RandomFirmwareROM(wishbone.SRAM):
     def __init__(self, size, seed=2373):
@@ -32,8 +33,6 @@ class RandomFirmwareROM(wishbone.SRAM):
             data.append(random.getrandbits(32))
         print("Firmware {} bytes of random data".format(size))
         wishbone.SRAM.__init__(self, size, read_only=True, init=data)
-
-
 
 
 class _CRG(Module):
@@ -104,7 +103,7 @@ class USBNoBios(SoCCore):
             kwargs['integrated_sram_size']=0
 
         # FIXME: Force either lite or minimal variants of CPUs; full is too big.
-        platform.add_extension(tomu_fpga.pins_serial)
+        platform.add_extension(fomu_hacker.pins_serial)
 
         clk_freq = int(12e6)
 

@@ -5,7 +5,7 @@ from litex.soc.cores.uart import UARTWishboneBridge
 from litex.soc.integration.soc_core import *
 
 from targets.utils import csr_map_update
-from targets.tomu_fpga_hacker.base import BaseSoC
+from targets.fomu_hacker.base import BaseSoC
 
 from third_party.valentyusb.valentyusb import usbcore
 

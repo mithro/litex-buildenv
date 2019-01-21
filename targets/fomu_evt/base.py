@@ -15,8 +15,6 @@ from gateware import cas
 from gateware import spi_flash
 
 from targets.utils import csr_map_update
-import platforms.tomu_fpga_hacker as tomu_fpga
-
 
 
 class _CRG(Module):
@@ -83,9 +81,6 @@ class BaseSoC(SoCCore):
         if 'integrated_sram_size' not in kwargs:
             kwargs['integrated_sram_size']=0
 
-        # FIXME: Force either lite or minimal variants of CPUs; full is too big.
-        # platform.add_extension(tomu_fpga.pins_serial)
-
         clk_freq = int(12e6)
 
         if skip_spi_boot:
@@ -136,5 +131,6 @@ class BaseSoC(SoCCore):
         # onto softcore's address bus.
         platform.toolchain.build_template[3] = "icepack -s {build_name}.txt {build_name}.bin"
         platform.toolchain.nextpnr_build_template[2] = "icepack -s {build_name}.txt {build_name}.bin"
+
 
 SoC = BaseSoC
