@@ -103,13 +103,6 @@ class _CRG(Module):
 
 
 class BaseSoC(SoCSDRAM):
-    #SoCSDRAM.mem_map = {
-    #    "rom":      0x00000000,
-    #    "sram":     0x10000000,
-    #    "main_ram": 0x40000000,
-    #    "csr":      0xe0000000,
-    #}
-
     mem_map = dict(
         SoCSDRAM.mem_map,
         spiflash=0x20000000,
