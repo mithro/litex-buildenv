@@ -103,34 +103,22 @@ class _CRG(Module):
 
 
 class BaseSoC(SoCSDRAM):
-    csr_peripherals = (
-        "spiflash",
-        "ddrphy",
-        "info",
-        "cas",
-#        "leds",
-#        "rgb_leds",
+    #SoCSDRAM.mem_map = {
+    #    "rom":      0x00000000,
+    #    "sram":     0x10000000,
+    #    "main_ram": 0x40000000,
+    #    "csr":      0xe0000000,
+    #}
+
+    mem_map = dict(
+        SoCSDRAM.mem_map,
+        spiflash=0x20000000,
+        emulator_ram=0x50000000,
     )
-    csr_map_update(SoCSDRAM.csr_map, csr_peripherals)
-
-    SoCSDRAM.mem_map = {
-        "rom":      0x00000000,
-        "sram":     0x10000000,
-        "main_ram": 0x40000000,
-        "csr":      0xe0000000,
-    }
-
-    mem_map = {
-        "spiflash": 0x20000000,
-        "emulator_ram": 0x50000000,
-    }
-    mem_map.update(SoCSDRAM.mem_map)
 
     def __init__(self, platform, spiflash="spiflash_1x", **kwargs):
-        if 'integrated_rom_size' not in kwargs:
-            kwargs['integrated_rom_size']=0x8000
-        if 'integrated_sram_size' not in kwargs:
-            kwargs['integrated_sram_size']=0x8000
+        kwargs['integrated_rom_size']=0x8000
+        kwargs['integrated_sram_size']=0x8000
 
         clk_freq = int(100e6)
         SoCSDRAM.__init__(self, platform, clk_freq, **kwargs)
@@ -141,11 +129,19 @@ class BaseSoC(SoCSDRAM):
 
         # Basic peripherals
         self.submodules.info = info.Info(platform, self.__class__.__name__)
+        self.add_csr("info")
         self.submodules.cas = cas.ControlAndStatus(platform, clk_freq)
-#        self.submodules.leds = led.ClassicLed(Cat(platform.request("user_led", i) for i in range(4)))
-#        self.submodules.rgb_leds = led.RGBLed(platform.request("rgb_leds"))
+        self.add_csr("cas")
 
-        # spi flash
+        # Add debug interface if the CPU has one.
+        if hasattr(self.cpu, "debug_bus"):
+            self.register_mem(
+                name="vexriscv_debug",
+                address=0xf00f0000,
+                interface=self.cpu.debug_bus,
+                size=0x100)
+
+        # Memory mapped SPI Flash
         spiflash_pads = platform.request(spiflash)
         spiflash_pads.clk = Signal()
         self.specials += Instance("STARTUPE2",
@@ -160,16 +156,12 @@ class BaseSoC(SoCSDRAM):
                 dummy=spiflash_dummy[spiflash],
                 div=platform.spiflash_clock_div,
                 endianness=self.cpu.endianness)
+        self.add_csr("spiflash")
         self.add_constant("SPIFLASH_PAGE_SIZE", 256)
         self.add_constant("SPIFLASH_SECTOR_SIZE", 0x10000)
-        self.add_wb_slave(mem_decoder(self.mem_map["spiflash"]), self.spiflash.bus)
-        self.add_memory_region(
-            "spiflash", self.mem_map["spiflash"], 16*1024*1024)
-
-        if self.cpu_type == "vexriscv" and self.cpu_variant == "linux":
-            size = 0x4000
-            self.submodules.emulator_ram = wishbone.SRAM(size)
-            self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, size)
+        self.add_constant("SPIFLASH_TOTAL_SIZE", platform.spiflash_total_size)
+        self.add_wb_slave(self.mem_map["spiflash"], self.spiflash.bus, platform.spiflash_total_size)
+        self.add_memory_region("spiflash", self.mem_map["spiflash"], platform.spiflash_total_size)
 
         bios_size = 0x8000
         self.flash_boot_address = self.mem_map["spiflash"]+platform.gateware_size+bios_size
@@ -189,6 +181,13 @@ class BaseSoC(SoCSDRAM):
                             sdram_module.geom_settings,
                             sdram_module.timing_settings,
                             controller_settings=controller_settings)
+        self.add_csr("ddrphy")
+
+        # Support for soft-emulation for full Linux support
+        if self.cpu_type == "vexriscv" and self.cpu_variant == "linux":
+            size = 0x4000
+            self.submodules.emulator_ram = wishbone.SRAM(size)
+            self.register_mem("emulator_ram", self.mem_map["emulator_ram"], self.emulator_ram.bus, size)
 
 
 SoC = BaseSoC
