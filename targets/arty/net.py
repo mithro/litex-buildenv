@@ -4,8 +4,7 @@ from litex.soc.integration.soc_sdram import *
 from liteeth.core.mac import LiteEthMAC
 from liteeth.phy import LiteEthPHY
 
-from targets.utils import csr_map_update
-from targets.arty.base import SoC as BaseSoC
+from .base import BaseSoC
 
 
 class NetSoC(BaseSoC):
@@ -21,26 +20,26 @@ class NetSoC(BaseSoC):
 
         BaseSoC.__init__(self, platform, *args, **kwargs)
 
+        # Ethernet ---------------------------------------------------------------------------------
         # Ethernet PHY
         self.submodules.ethphy = LiteEthPHY(
             platform.request("eth_clocks"),
             platform.request("eth"))
         self.add_csr("ethphy")
-
         # Ethernet MAC
         ethmac_win_size = 0x2000
         self.submodules.ethmac = LiteEthMAC(
-            phy=self.ethphy, dw=32, interface="wishbone", endianness=self.cpu.endianness)
+            phy        = self.ethphy,
+            dw         = 32,
+            interface  = "wishbone",
+            endianness = self.cpu.endianness)
         self.add_wb_slave(self.mem_map["ethmac"], self.ethmac.bus, ethmac_win_size)
         self.add_memory_region("ethmac", self.mem_map["ethmac"], ethmac_win_size, type="io")
         self.add_csr("ethmac")
         self.add_interrupt("ethmac")
-
-        self.ethphy.crg.cd_eth_rx.clk.attr.add("keep")
-        self.ethphy.crg.cd_eth_tx.clk.attr.add("keep")
-        #self.platform.add_period_constraint(self.crg.cd_sys.clk, 10.0)
-        self.platform.add_period_constraint(self.ethphy.crg.cd_eth_rx.clk, 80.0)
-        self.platform.add_period_constraint(self.ethphy.crg.cd_eth_tx.clk, 80.0)
+        # timing constraints
+        self.platform.add_period_constraint(self.ethphy.crg.cd_eth_rx.clk, 1e9/25e6)
+        self.platform.add_period_constraint(self.ethphy.crg.cd_eth_tx.clk, 1e9/25e6)
         self.platform.add_false_path_constraints(
             self.crg.cd_sys.clk,
             self.ethphy.crg.cd_eth_rx.clk,
