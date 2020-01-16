@@ -11,7 +11,7 @@ from targets.utils import csr_map_update
 from targets.arty.base import SoC as BaseSoC
 
 
-class NetSoC(BaseSoC):
+class EtherboneSoC(BaseSoC):
     def __init__(self, platform, *args, **kwargs):
         # Need a larger integrated ROM on or1k to fit the BIOS with TFTP support.
         if 'integrated_rom_size' not in kwargs and kwargs.get('cpu_type', 'lm32') != 'lm32':
@@ -20,35 +20,29 @@ class NetSoC(BaseSoC):
         BaseSoC.__init__(self, platform, *args, **kwargs)
 
         # Ethernet ---------------------------------------------------------------------------------
-        # Ethernet PHY
-        self.submodules.eth_phy = LiteEthPHY(
-            platform.request("eth_clocks"),
-            platform.request("eth"))
-        self.add_csr("eth_phy")
-
-        # timing constraints
-        self.eth_phy.crg.cd_eth_rx.clk.attr.add("keep")
-        self.eth_phy.crg.cd_eth_tx.clk.attr.add("keep")
-        #self.platform.add_period_constraint(self.crg.cd_sys.clk, 10.0)
-        self.platform.add_period_constraint(self.eth_phy.crg.cd_eth_rx.clk, 80.0)
-        self.platform.add_period_constraint(self.eth_phy.crg.cd_eth_tx.clk, 80.0)
-        self.platform.add_false_path_constraints(
-            self.crg.cd_sys.clk,
-            self.eth_phy.crg.cd_eth_rx.clk,
-            self.eth_phy.crg.cd_eth_tx.clk)
-
+        # Ethernet Phy
+        self.submodules.ethphy = LiteEthPHY(
+            clock_pads = self.platform.request("eth_clocks"),
+            pads       = self.platform.request("eth"))
+        self.add_csr("ethphy")
         # Ethernet Core
         etherbone_mac_address = 0x10e2d5000000
         etherbone_ip_address  = "192.168.100.50"
-        self.submodules.eth_core = LiteEthUDPIPCore(
-            phy         = self.eth_phy,
+        self.submodules.ethcore = LiteEthUDPIPCore(
+            phy         = self.ethphy,
             mac_address = etherbone_mac_address,
             ip_address  = etherbone_ip_address,
             clk_freq    = self.clk_freq)
-
-        # Etherbone
-        self.submodules.etherbone = LiteEthEtherbone(self.eth_core.udp, 1234, mode="master")
+        # Etherbone Core
+        self.submodules.etherbone = LiteEthEtherbone(self.ethcore.udp, 1234)
         self.add_wb_master(self.etherbone.wishbone.bus)
+        # timing constraints
+        self.platform.add_period_constraint(self.ethphy.crg.cd_eth_rx.clk, 1e9/25e6)
+        self.platform.add_period_constraint(self.ethphy.crg.cd_eth_tx.clk, 1e9/25e6)
+        self.platform.add_false_path_constraints(
+            self.crg.cd_sys.clk,
+            self.ethphy.crg.cd_eth_rx.clk,
+            self.ethphy.crg.cd_eth_tx.clk)
 
         # Analyzer ---------------------------------------------------------------------------------
         #analyzer_signals = [
@@ -75,4 +69,4 @@ class NetSoC(BaseSoC):
             self.add_constant(s, e)
 
 
-SoC = NetSoC
+SoC = EtherboneSoC
